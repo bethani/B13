@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="39e63ca8-2212-4e23-9fa2-492935ebc402" >
+		<file:connection workingDir="C:\Users\Wendifraw\Desktop\B14 file" />
+	</file:config>
+	<file:config name="File_Config1" doc:name="File Config" doc:id="04e6a0e8-728c-49c5-8a81-db3b79e890e6" >
+		<file:connection workingDir="C:\Users\Wendifraw\Desktop\B14 file\Write2" />
+	</file:config>
+	<file:config name="File_Config2" doc:name="File Config" doc:id="1ac660ba-95f5-4ab4-8f56-0272c5883560" >
+		<file:connection workingDir="C:\Users\Wendifraw\Desktop\B14 file\Write" />
+	</file:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="577c7cb2-cad8-402a-872a-1fc9d8fcf399" >
+		<http:listener-connection host="0.0.0.0" port="8083" />
+	</http:listener-config>
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="61a92dad-7914-454b-a48d-eef399a6755d" >
+		<http:listener-connection host="0.0.0.0" port="8086" />
+	</http:listener-config>
+	<file:config name="File_Config4" doc:name="File Config" doc:id="60de86e7-47db-4197-bbd9-6aa0cbbdf7fa" >
+		<file:connection workingDir="C:\Users\Wendifraw\Desktop\B14 file\Read" />
+	</file:config>
+	<flow name="project-13Flow" doc:id="b43ff9cd-e840-4661-8225-84bbeb0e4209" >
+		<file:listener doc:name="On New or Updated File" doc:id="2f2f8f79-06c9-42dc-aa2d-f05c64df0d37" config-ref="File_Config4" moveToDirectory="C:\Users\Wendifraw\Desktop\B14 file">
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="DAYS" />
+			</scheduling-strategy>
+		</file:listener>
+		<file:read doc:name="Read" doc:id="2c9fbaa0-c4c8-4278-9f15-a75f43bff488" config-ref="File_Config" path="C:\Users\Wendifraw\Desktop\B14 file\Read\140file.csv.xlsx"/>
+		<ee:transform doc:name="Transform Message" doc:id="170a3730-c4c7-4fc2-b8c1-8c03df9a7d0d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="dc49d621-be25-4d48-98af-0b86d7fd8271" name="Validation"/>
+		<batch:job jobName="Batch_Job" doc:id="2375fa63-4204-4858-8e0b-bc724f6b850b" blockSize="70">
+			<batch:process-records >
+				<batch:step name="Batch_Step1" doc:id="7abe0848-9e77-45c2-b66f-3533c4e6d466" >
+					<set-variable value='#[payload.id ++ ".csv"]' doc:name="Set Variable" doc:id="3838ed17-cb02-441c-9dc8-9f7b175a5d04" variableName="Myvar"/>
+					<ee:transform doc:name="Transform Message" doc:id="4faa7b7e-f940-4fa4-81ab-1f71060a105f" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<file:write doc:name="Write" doc:id="dd18f56c-9b92-4786-aab1-6a97b4ce6242" config-ref="File_Config1" path="#[vars.myvar]"/>
+				</batch:step>
+				<batch:step name="Onl_Failures" doc:id="0e7afeb5-f85e-4a5b-9f35-1f1991d7a2d3" acceptPolicy="ONLY_FAILURES">
+					<foreach doc:name="For Each" doc:id="8fa882c0-39ac-4765-813b-fa6c596a6a6a" >
+						<file:write doc:name="Write" doc:id="761705bd-f9e6-404b-a58a-1490f51ed480" config-ref="File_Config2" path="faldefile.csv"/>
+					</foreach>
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+		<logger level="INFO" doc:name="Logger" doc:id="284c85c8-28dc-4abd-92e2-0ec3ba7a241f" message="File Succsesfuly write"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9c2983c9-bbc7-472e-9bb1-54b48f66f036" >
+				<ee:transform doc:name="Transform Message" doc:id="2a95543a-d906-4e1d-a3cb-1b5f3bde4ffe" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/Json
+---
+{
+ "Message": "wrong info"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Validation" doc:id="76bef6e5-0992-4914-ac16-1ef5685e5f18" >
+		<try doc:name="Try" doc:id="c868821f-8321-43fc-8443-a0d431fe8569" >
+			<validation:is-email doc:name="Is email" doc:id="da1c69cc-fec8-48c2-b03d-9d6e0d069062" email="wend@gmail.com" message="Wrong Email format"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c763430e-9a09-4bbd-ac16-db14bb7772eb" >
+					<ee:transform doc:name="Transform Message" doc:id="e70f3ea0-3b45-43bf-a771-fca0369cce89" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "wrong Email Address"
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="b5d4b79d-f841-480e-986c-4ec8f24c92e3" >
+			<validation:is-ip doc:name="Is IP" doc:id="c492aed3-2a7e-4743-8ac8-9c920b34646d" ip="123.356.221.555" message="Wrong IP Addres"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4fe59d6b-c817-4775-9748-1cf2e7f0347f" >
+					<ee:transform doc:name="Transform Message" doc:id="a541b0f7-ed6e-45bb-9da6-57d14fe6d6da" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/jason
+---
+{
+	"Message": "wrong IP Address"
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</flow>
+</mule>

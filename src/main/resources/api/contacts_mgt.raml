@@ -1,0 +1,77 @@
+#%RAML 1.0
+title: contacts_mgt
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/16490dc8-53ae-48cb-be4c-945672dfb43a/ # baseUri: 
+version:
+types:
+  contactsDatatype: !include Data Type/dataType.raml
+/contacts:
+  get:
+    description: retrive all contacts
+    responses:
+      200:
+        body:
+          application/json:
+            type: contactsDatatype []
+            example: !include examples/allgetexample.json
+              
+  post:
+    description: crate a list of contacts
+    body:
+      application/json:
+        type: contactsDatatype
+        example: !include examples/postexample.json
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              "msg" : "sessfully crated"
+  /contacts/{id}:
+    uriParameters:
+      id:
+        required: true
+    get:
+      description: retrive a single contact by id
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include examples/getby id.json
+              type: contactsDatatype
+    put:
+      description: update by id
+      body:
+        application/json:
+          type: contactsDatatype
+          example: !include examples/getby id.json
+            
+      responses:
+        201:
+          body:
+            application/json:
+              example:
+                "msg": "secessfully updated"
+    delete:
+      description: remove by id
+      responses:
+        200:
+          body:
+            application/json:
+              example: 
+               "msg": "sessfully deleted"
+                
+                
+    
+    
+
+
+
+    
+      
+        
+      
+              
+            
+    
+    
+     
